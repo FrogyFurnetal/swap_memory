@@ -1,0 +1,103 @@
+#!/system/bin/sh
+#
+# swap External to Internal For Xiaomi Redmi note version 04.10.05
+# Created by FrogyFurnetal
+#
+# Default storage redmi note on "init.ssd.rc"
+#         EXTERNAL_STORAGE /storage/emulated/legacy
+#         SECONDARY_STORAGE /storage/sdcard1
+#         EMULATED_STORAGE_SOURCE /mnt/shell/emulated
+#         EMULATED_STORAGE_TARGET /storage/emulated
+#
+#
+########################################################################
+# Constant definition
+LOGPATH="/cache/Int2Ext"
+LOGFILE="${LOGPATH}/Int2Ext.log"
+WORKDIR="${LOGPATH}"
+BTMGRPATH="/system/btmgr"
+# Busybox setup
+if [ -x "${BTMGRPATH}/bin/busybox" ]; then
+  BUSYBOX="${BTMGRPATH}/bin/busybox"
+elif [ -x "/system/xbin/busybox" ]; then
+  BUSYBOX="/system/xbin/busybox"
+elif [ -x "/system/bin/busybox" ]; then
+  BUSYBOX="/system/bin/busybox"
+else
+  BUSYBOX=""
+fi
+# Command setup
+DATE="${BUSYBOX} date"
+CAT="${BUSYBOX} cat"
+CHOWN="${BUSYBOX} chown"
+CHMOD="${BUSYBOX} chmod"
+DF="${BUSYBOX} df"
+MKDIR="${BUSYBOX} mkdir"
+MOUNT="${BUSYBOX} mount"
+UMOUNT="${BUSYBOX} umount"
+MV="${BUSYBOX} mv"
+RM="${BUSYBOX} rm"
+TOUCH="${BUSYBOX} touch"
+CHGRP="${BUSYBOX} chgrp"
+GREP="${BUSYBOX} grep"
+# Logfile rotation
+if [ ! -d "${LOGPATH}" ];then
+  ${MKDIR} ${LOGPATH}
+  ${CHOWN} system.cache ${LOGPATH}
+  ${CHMOD} 770 ${LOGPATH}
+else
+  if [ -f ${LOGFILE} ];then
+    ${MV} ${LOGFILE} ${LOGFILE}.old
+  fi
+  ${TOUCH} ${LOGFILE}
+  ${CHMOD} 660 ${LOGFILE}
+fi
+# Function definition for logging
+ECHOL(){
+  _DATETIME=`${DATE} +"%Y%m%d %H%M%S"`
+  echo "${_DATETIME}: $*" >> ${LOGFILE}
+  return 0
+}
+EXECL(){
+  _DATETIME=`${DATE} +"%Y%m%d %H%M%S"`
+  echo "${_DATETIME}: $*" >> ${LOGFILE}
+  $* 2>> ${LOGFILE}
+  _RET=$?
+  echo "${_DATETIME}: RET=${_RET}" >> ${LOGFILE}
+  return ${_RET}
+}
+# Start main routine
+ECHOL "### Swapping memory start"
+ECHOL "### BUSYBOX=${BUSYBOX}"
+ECHOL "### "
+# mounting root at read and write
+ECHOL "### Mounting root as rw..."
+EXECL ${MOUNT} -o rw,remount /
+ECHOL "### Wait for swapping memory,..."
+    if ( ${GREP} -c "/storage/sdcard1" /proc/mounts ); then
+		# Finishing
+		ECHOL "### "
+		ECHOL "### Swapping Memory Disable"
+	else
+		sleep 5
+		ECHOL "### Mounting external memory into /data/media/0"
+		EXECL ${MOUNT} -t vfat -o umask=0000 /dev/block/vold/179:97 /data/media/0
+		EXECL ${MOUNT} -o bind /data/media/0/Android/obb /data/media/obb
+		ECHOL "### Mounting external memory into /storage/sdcard0"
+		EXECL ${MOUNT} -o bind /data/media/0 /mnt/shell/emulated/0
+		ECHOL "### Mounting Internal memory into /storage/sdcard1"
+		EXECL ${MOUNT} -o bind /data/media/legacy /storage/sdcard1
+		# Finishing
+		ECHOL "### "
+		ECHOL "### Swapping Memory Enable"
+        break;
+    fi
+# list Disk utilization
+ECHOL "### List Disk Utilization..."
+ECHOL "------------ start ---------------------"
+${DF} >> ${LOGFILE}
+ECHOL "------------  end  ---------------------"
+ECHOL "### "
+# mounting root at read only
+ECHOL "### remounting root as ro..."
+EXECL ${MOUNT} -o ro,remount /
