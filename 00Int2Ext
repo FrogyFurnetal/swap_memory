@@ -85,6 +85,7 @@ ECHOL "### Wait for swapping memory,..."
 		EXECL ${MOUNT} -o bind /data/media/0/Android/obb /data/media/obb
 		ECHOL "### Mounting external memory into /storage/sdcard0"
 		EXECL ${MOUNT} -o bind /data/media/0 /mnt/shell/emulated/0
+		EXECL ${MOUNT} -o bind /data/media/0/Android/obb /mnt/shell/emulated/obb
 		ECHOL "### Mounting Internal memory into /storage/sdcard1"
 		EXECL ${MOUNT} -o bind /data/media/legacy /storage/sdcard1
 		# Finishing
