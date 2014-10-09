@@ -1,6 +1,6 @@
 #!/system/bin/sh
 #
-# swap External to Internal For Xiaomi Redmi note version 04.10.09
+# swap External to Internal For Xiaomi Redmi note version 04.10.09.1
 # Created by FrogyFurnetal
 #
 # Default storage redmi note on "init.ssd.rc"
@@ -83,11 +83,12 @@ ECHOL "### Wait for swapping memory,..."
 		ECHOL "### Mounting external memory into /data/media/0"
 		EXECL ${MOUNT} -t vfat -o umask=0000 /dev/block/vold/179:97 /data/media/0
 		EXECL ${MOUNT} -o bind /data/media/0/Android/obb /data/media/obb
-		ECHOL "### Mounting external memory into /storage/sdcard0"
+		ECHOL "### Mounting external memory into /mnt/shell/emulated/0"
 		EXECL ${MOUNT} -o bind /data/media/0 /mnt/shell/emulated/0
 		EXECL ${MOUNT} -o bind /data/media/0/Android/obb /mnt/shell/emulated/obb
 		ECHOL "### Mounting Internal memory into /storage/sdcard1"
-		EXECL ${MOUNT} -o bind /data/media/legacy /storage/sdcard1
+		EXECL mkdir -p /data/sdcard
+		EXECL ${MOUNT} -o bind /data/sdcard /storage/sdcard1
 		# Finishing
 		ECHOL "### "
 		ECHOL "### Swapping Memory Enable"
