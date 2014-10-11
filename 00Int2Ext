@@ -10,9 +10,13 @@ DATAPATH="/data/sdcard"
 SDPATH="/dev/block/vold/179:97"
 DATA0PATH="/data/media/0"
 DATAOBBPATH="/data/media/obb"
+EXTSD="/storage/sdcard1"
+DIREMU="/mnt/shell/emulated/0"
+DIREMUOBB="/mnt/shell/emulated/obb"
 LOGFILE="${LOGPATH}/Int2Ext.log"
 WORKDIR="${LOGPATH}"
 BTMGRPATH="/system/btmgr"
+MMC="mmcblk1p1"
 # Busybox setup
 if [ -x "${BTMGRPATH}/bin/busybox" ]; then
   BUSYBOX="${BTMGRPATH}/bin/busybox"
@@ -71,32 +75,34 @@ ECHOL "### "
 ECHOL "### Mounting root as rw..."
 EXECL ${MOUNT} -o rw,remount /
 ECHOL "### Wait for swapping memory,..."
-if ( grep -c "mmcblk1p1" /proc/partitions ); then
+if ( grep -c ${MMC} /proc/partitions ); then
 	sleep 5
 	if [ ! -d "${DATA0PATH}" ];then
-		ECHOL "### no such file or directory"
-		ECHOL "### create folder /data/media/ 0 and obb"
-		${MKDIR} -p "${DATA0PATH}"
-		${MKDIR} -p "${DATAOBBPATH}"
+		ECHOL "### no such directory /data/media/0"
+		ECHOL "### create folder /data/media/0 and /data/media/obb"
+		${MKDIR} -p ${DATA0PATH}
+		${MKDIR} -p ${DATAOBBPATH}
 	else
-		ECHOL "### Folder or files found"
+		ECHOL "### Folder /data/media/0 founds"
 	fi
 	ECHOL "### Mounting external memory into /data/media/0"
-	EXECL ${MOUNT} -t vfat -o umask=0002,uid=1023,gid=1023 ${SDPATH} /data/media/0
-	EXECL ${MOUNT} -o bind /data/media/0/Android/obb /data/media/obb
+	EXECL ${MOUNT} -t vfat -o umask=0002,uid=1023,gid=1023 ${SDPATH} ${DATA0PATH}
+	EXECL ${MOUNT} -o bind ${DATA0PATH}/Android/obb ${DATAOBBPATH}
 	ECHOL "### Mounting external memory into /mnt/shell/emulated/0"
-	EXECL ${MOUNT} -o bind /data/media/0 /mnt/shell/emulated/0
-	EXECL ${MOUNT} -o bind /data/media/0/Android/obb /mnt/shell/emulated/obb
+	EXECL ${MOUNT} -o bind ${DATA0PATH} ${DIREMU}
+	EXECL ${MOUNT} -o bind ${DATA0PATH}/Android/obb ${DIREMUOBB}
 	ECHOL "### Mounting Internal memory into /storage/sdcard1"
 	if [ ! -d "${DATAPATH}" ];then
+		ECHOL "### no such directory /data/sdcard"
 		${MKDIR} -p ${DATAPATH}
 		${CHOWN} media_rw.media_rw ${DATAPATH}
 		${CHMOD} 0775 ${DATAPATH}
 	else
+		ECHOL "### Folder /data/sdcard founds"
 		${CHOWN} media_rw.media_rw ${DATAPATH}
 		${CHMOD} 0775 ${DATAPATH}
 	fi
-	EXECL ${MOUNT} -o bind ${DATAPATH} /storage/sdcard1
+	EXECL ${MOUNT} -o bind ${DATAPATH} ${EXTSD}
 	# Finishing
 	ECHOL "### "
 	ECHOL "### Swapping Memory Enable"
