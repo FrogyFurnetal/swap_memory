@@ -6,7 +6,7 @@
 ########################################################################
 # Constant definition
 LOGPATH="/cache/Int2Ext"
-DATAPATH="/data/sdcard"
+DATAPATH="/data/media/legacy"
 SDPATH="/dev/block/vold/179:97"
 DATA0PATH="/data/media/0"
 DATAOBBPATH="/data/media/obb"
@@ -86,21 +86,17 @@ if ( grep -c ${MMC} /proc/partitions ); then
 		ECHOL "### Folder /data/media/0 founds"
 	fi
 	ECHOL "### Mounting external memory into /data/media/0"
-	EXECL ${MOUNT} -t vfat -o umask=0002,uid=1023,gid=1023 ${SDPATH} ${DATA0PATH}
+	EXECL ${MOUNT} -t vfat -o umask=0000 ${SDPATH} ${DATA0PATH}
 	EXECL ${MOUNT} -o bind ${DATA0PATH}/Android/obb ${DATAOBBPATH}
 	ECHOL "### Mounting external memory into /mnt/shell/emulated/0"
 	EXECL ${MOUNT} -o bind ${DATA0PATH} ${DIREMU}
 	EXECL ${MOUNT} -o bind ${DATA0PATH}/Android/obb ${DIREMUOBB}
 	ECHOL "### Mounting Internal memory into /storage/sdcard1"
 	if [ ! -d "${DATAPATH}" ];then
-		ECHOL "### no such directory /data/sdcard"
+		ECHOL "### no such directory /data/media/legacy"
 		${MKDIR} -p ${DATAPATH}
-		${CHOWN} media_rw.media_rw ${DATAPATH}
-		${CHMOD} 0775 ${DATAPATH}
 	else
-		ECHOL "### Folder /data/sdcard founds"
-		${CHOWN} media_rw.media_rw ${DATAPATH}
-		${CHMOD} 0775 ${DATAPATH}
+		ECHOL "### Folder /data/media/legacy founds"
 	fi
 	EXECL ${MOUNT} -o bind ${DATAPATH} ${EXTSD}
 	# Finishing
