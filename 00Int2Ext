@@ -1,18 +1,15 @@
 #!/system/bin/sh
 #
-# swap External to Internal For Xiaomi Redmi note version 04.10.09.1
+# swap External to Internal For Xiaomi Redmi note version 04.10.11
 # Created by FrogyFurnetal
-#
-# Default storage redmi note on "init.ssd.rc"
-#         EXTERNAL_STORAGE /storage/emulated/legacy
-#         SECONDARY_STORAGE /storage/sdcard1
-#         EMULATED_STORAGE_SOURCE /mnt/shell/emulated
-#         EMULATED_STORAGE_TARGET /storage/emulated
-#
 #
 ########################################################################
 # Constant definition
 LOGPATH="/cache/Int2Ext"
+DATAPATH="/data/sdcard"
+SDPATH="/dev/block/vold/179:97"
+DATA0PATH="/data/media/0"
+DATAOBBPATH="/data/media/obb"
 LOGFILE="${LOGPATH}/Int2Ext.log"
 WORKDIR="${LOGPATH}"
 BTMGRPATH="/system/btmgr"
@@ -74,32 +71,48 @@ ECHOL "### "
 ECHOL "### Mounting root as rw..."
 EXECL ${MOUNT} -o rw,remount /
 ECHOL "### Wait for swapping memory,..."
-    if ( ${GREP} -c "/storage/sdcard1" /proc/mounts ); then
-		# Finishing
-		ECHOL "### "
-		ECHOL "### Swapping Memory Disable"
+if ( grep -c "mmcblk1p1" /proc/partitions ); then
+	sleep 5
+	if [ ! -d "${DATA0PATH}" ];then
+		ECHOL "### no such file or directory"
+		ECHOL "### create folder /data/media/ 0 and obb"
+		${MKDIR} -p "${DATA0PATH}"
+		${MKDIR} -p "${DATAOBBPATH}"
 	else
-		sleep 5
-		ECHOL "### Mounting external memory into /data/media/0"
-		EXECL ${MOUNT} -t vfat -o umask=0000 /dev/block/vold/179:97 /data/media/0
-		EXECL ${MOUNT} -o bind /data/media/0/Android/obb /data/media/obb
-		ECHOL "### Mounting external memory into /mnt/shell/emulated/0"
-		EXECL ${MOUNT} -o bind /data/media/0 /mnt/shell/emulated/0
-		EXECL ${MOUNT} -o bind /data/media/0/Android/obb /mnt/shell/emulated/obb
-		ECHOL "### Mounting Internal memory into /storage/sdcard1"
-		EXECL mkdir -p /data/sdcard
-		EXECL ${MOUNT} -o bind /data/sdcard /storage/sdcard1
-		# Finishing
-		ECHOL "### "
-		ECHOL "### Swapping Memory Enable"
-        break;
-    fi
-# list Disk utilization
-ECHOL "### List Disk Utilization..."
-ECHOL "------------ start ---------------------"
-${DF} >> ${LOGFILE}
-ECHOL "------------  end  ---------------------"
-ECHOL "### "
+		ECHOL "### Folder or files found"
+	fi
+	ECHOL "### Mounting external memory into /data/media/0"
+	EXECL ${MOUNT} -t vfat -o umask=0002,uid=1023,gid=1023 ${SDPATH} /data/media/0
+	EXECL ${MOUNT} -o bind /data/media/0/Android/obb /data/media/obb
+	ECHOL "### Mounting external memory into /mnt/shell/emulated/0"
+	EXECL ${MOUNT} -o bind /data/media/0 /mnt/shell/emulated/0
+	EXECL ${MOUNT} -o bind /data/media/0/Android/obb /mnt/shell/emulated/obb
+	ECHOL "### Mounting Internal memory into /storage/sdcard1"
+	if [ ! -d "${DATAPATH}" ];then
+		${MKDIR} -p ${DATAPATH}
+		${CHOWN} media_rw.media_rw ${DATAPATH}
+		${CHMOD} 0775 ${DATAPATH}
+	else
+		${CHOWN} media_rw.media_rw ${DATAPATH}
+		${CHMOD} 0775 ${DATAPATH}
+	fi
+	EXECL ${MOUNT} -o bind ${DATAPATH} /storage/sdcard1
+	# Finishing
+	ECHOL "### "
+	ECHOL "### Swapping Memory Enable"
+    break;
+	# list Disk utilization
+	ECHOL "### List Disk Utilization"
+	ECHOL "------------ start ---------------------"
+	${DF} >> ${LOGFILE}
+	ECHOL "------------  end  ---------------------"
+else
+	# Finishing
+	ECHOL "### "
+	ECHOL "### no sdcard external"
+	ECHOL "### Swapping Memory Disable"
+fi
 # mounting root at read only
+ECHOL "### "
 ECHOL "### remounting root as ro..."
 EXECL ${MOUNT} -o ro,remount /
